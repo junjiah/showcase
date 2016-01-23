@@ -2,9 +2,9 @@ module Repo where
 
 import Effects exposing (Effects, Never)
 import Html exposing (..)
-import Html.Attributes exposing (style)
+import Html.Attributes exposing (style, property)
 import Http
-import Json.Decode as Json
+import Json.Encode
 import Task
 
 
@@ -20,23 +20,23 @@ type alias Model =
 init : String -> String -> (Model, Effects Action)
 init name description =
   ( Model name description ""
-  , Effects.none)
+  , fetchReadme name)
 
 
 -- Update.
 
 type Action
-    = Info (Maybe String)
+    = GetReadme (Maybe String)
 
 
 update : Action -> Model -> (Model, Effects Action)
 update action model =
   let
-    getDescription = Maybe.withDefault "DESC"
+    getReadme = Maybe.withDefault ""
   in
     case action of
-      Info maybeDescription ->
-        ( Model model.name (getDescription maybeDescription) (getDescription maybeDescription)
+      GetReadme maybeReadme ->
+        ( { model | readme = getReadme maybeReadme }
         , Effects.none
         )
 
@@ -50,11 +50,13 @@ view : Signal.Address Action -> Model -> Html
 view address model =
   div [ projectStyle ]
     [ div [ descriptionStyle ]
-      [ h3 [] [ text model.name ]
-      , p [] [text model.description ]
-      ]
-    , div [ readmeStyle ]
-      [ p [] [ text model.readme ] ]
+        [ h3 [] [ text model.name ]
+        , p [] [text model.description ]
+        ]
+    , div
+        [ readmeStyle
+        , property "innerHTML" <| Json.Encode.string model.readme
+        ] []
     ]
 
 
@@ -76,24 +78,38 @@ descriptionStyle =
 readmeStyle : Attribute
 readmeStyle =
   style
-    [ "flex" => "1" ]
+    [ "flex" => "1"
+    , "max-height" => "200px"
+    , "overflow" => "scroll"
+    ]
 
 
 -- Effects.
 
-fetchRepo : String -> Effects Action
-fetchRepo name =
-  Http.get decodeUrl (repoUrl name)
+fetchReadme : String -> Effects Action
+fetchReadme name =
+  Http.send Http.defaultSettings
+    { verb = "GET"
+    , headers = [("Accept", "application/vnd.github.v3.html")]
+    , url = readmeUrl name
+    , body = Http.empty
+    }
+    |> Task.map handleReadmeResponse
     |> Task.toMaybe
-    |> Task.map Info
+    |> Task.map GetReadme
     |> Effects.task
 
 
-repoUrl : String -> String
-repoUrl name =
-  Http.url ("https://api.github.com/repos/edfward/" ++ name) []
+handleReadmeResponse : Http.Response -> String
+handleReadmeResponse response =
+  if 200 <= response.status && response.status < 300 then
+    case response.value of
+      Http.Text readmeText -> readmeText
+      _ -> "No README Found"
+  else
+    "No README Found"
 
 
-decodeUrl : Json.Decoder String
-decodeUrl =
-  Json.at [ "description" ] Json.string
+readmeUrl : String -> String
+readmeUrl name =
+  "https://api.github.com/repos/edfward/" ++ name ++ "/readme"

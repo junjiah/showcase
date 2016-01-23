@@ -46,11 +46,15 @@ update message model =
     InitRepoList maybeRepoInfoList ->
       let
         repoInfoList = Maybe.withDefault [] maybeRepoInfoList
-        repos = List.indexedMap (\i info -> (i, fst <| Repo.init info.name info.description)) repoInfoList
-        newModel = Model repos username
+        makeEntry index info =
+          let
+            (repo, fx) = Repo.init info.name info.description
+          in
+            ((index, repo), map (ShowSub index) fx)
+        (repos, fxList) = List.indexedMap makeEntry repoInfoList |> List.unzip
       in
-        ( newModel
-        , Effects.none
+        ( Model repos username
+        , batch fxList
         )
     ShowSub id repoAction ->
       let
@@ -101,6 +105,7 @@ elementView address (id, model) =
 fetchRepoList : Effects Action
 fetchRepoList =
   Http.get decodeUrl repoListUrl
+    |> Task.map (List.take 3)
     |> Task.toMaybe
     |> Task.map InitRepoList
     |> Effects.task
@@ -109,8 +114,8 @@ fetchRepoList =
 repoListUrl : String
 repoListUrl =
   Http.url "https://api.github.com/users/edfward/repos"
-    [ ("sort", "updated")
-    , ("access_token", "0da4bac95393cefafc4d70ff2fd7ed85f915c645")
+    [ ("sort", "pushed")
+    , ("access_token", "###ACCESS_TOKEN###")
     ]
 
 

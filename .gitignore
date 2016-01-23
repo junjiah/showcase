@@ -1,4 +1,5 @@
 *.key
+*.bak
 elm.js
 
 elm-stuff/
