@@ -16,18 +16,17 @@ type alias Model =
   , readme: String
   }
 
-name = "ReadKeyServer"
 
-init : (Model ,Effects Action)
-init =
-  ( Model name "" ""
-  , fetchRepo name)
+init : String -> String -> (Model, Effects Action)
+init name description =
+  ( Model name description ""
+  , Effects.none)
 
 
 -- Update.
 
 type Action
-    = RepoInfo (Maybe String)
+    = Info (Maybe String)
 
 
 update : Action -> Model -> (Model, Effects Action)
@@ -36,7 +35,7 @@ update action model =
     getDescription = Maybe.withDefault "DESC"
   in
     case action of
-      RepoInfo maybeDescription ->
+      Info maybeDescription ->
         ( Model model.name (getDescription maybeDescription) (getDescription maybeDescription)
         , Effects.none
         )
@@ -86,7 +85,7 @@ fetchRepo : String -> Effects Action
 fetchRepo name =
   Http.get decodeUrl (repoUrl name)
     |> Task.toMaybe
-    |> Task.map RepoInfo
+    |> Task.map Info
     |> Effects.task
 
 

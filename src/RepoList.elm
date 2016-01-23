@@ -4,17 +4,22 @@ import Effects exposing (Effects, map, batch, Never)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import Json.Decode as Json
+import Http
+import Json.Decode as Json exposing ((:=))
+import Task
 
 import Repo
 
 
 -- Model.
 
+type alias RepoInfo =
+  { name: String, url: String, description: String, stars: Int }
+
+
 type alias Model =
   { repoList : List (Int, Repo.Model)
   , user : String
-  , uid : Int
   }
 
 
@@ -24,27 +29,28 @@ username = "edfward"
 
 init : (Model, Effects Action)
 init =
-  ( Model [] username 0
-  , Effects.none
+  ( Model [] username
+  , fetchRepoList
   )
 
 
 -- Update.
 
 type Action
-  = Create
+  = InitRepoList (Maybe (List RepoInfo))
   | ShowSub Int Repo.Action
 
 update : Action -> Model -> (Model, Effects Action)
 update message model =
   case message of
-    Create ->
+    InitRepoList maybeRepoInfoList ->
       let
-        (newRepo, fx) = Repo.init
-        newModel = Model (model.repoList ++ [(model.uid, newRepo)]) username (model.uid + 1)
+        repoInfoList = Maybe.withDefault [] maybeRepoInfoList
+        repos = List.indexedMap (\i info -> (i, fst <| Repo.init info.name info.description)) repoInfoList
+        newModel = Model repos username
       in
         ( newModel
-        , map (ShowSub model.uid) fx
+        , Effects.none
         )
     ShowSub id repoAction ->
       let
@@ -76,9 +82,6 @@ update message model =
 
 view : Signal.Address Action -> Model -> Html
 view address model =
-  div []
-    [ button [onClick address Create, style [ "position" => "fixed" ]] [ text "Load repo!" ],
-
   div [ style [ "min-height" => "100vh", "display" => "flex" ] ]
     [ nav [ style [ "flex" => "0 0 12em" ] ] []
     , main' [ style [ "flex" => "1" ] ]
@@ -86,8 +89,39 @@ view address model =
     , aside [ style [ "flex" => "0 0 12em" ] ] []
     ]
 
-    ]
 
 elementView : Signal.Address Action -> (Int, Repo.Model) -> Html
 elementView address (id, model) =
   Repo.view (Signal.forwardTo address (ShowSub id)) model
+
+
+-- Effects.
+
+
+fetchRepoList : Effects Action
+fetchRepoList =
+  Http.get decodeUrl repoListUrl
+    |> Task.toMaybe
+    |> Task.map InitRepoList
+    |> Effects.task
+
+
+repoListUrl : String
+repoListUrl =
+  Http.url "https://api.github.com/users/edfward/repos"
+    [ ("sort", "updated")
+    , ("access_token", "0da4bac95393cefafc4d70ff2fd7ed85f915c645")
+    ]
+
+
+decodeUrl : Json.Decoder (List RepoInfo)
+decodeUrl =
+  let
+    repo =
+      Json.object4 RepoInfo
+        ("name" := Json.string)
+        ("html_url" := Json.string)
+        ("description" := Json.string)
+        ("stargazers_count" := Json.int)
+  in
+    Json.list repo
