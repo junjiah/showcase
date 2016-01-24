@@ -50,7 +50,7 @@ update message model =
         repoInfoList = Maybe.withDefault [] maybeRepoInfoList
         makeEntry index info =
           let
-            (repo, fx) = Repo.init info.name username info.url info.description
+            (repo, fx) = Repo.init username info.name info.url info.description
           in
             ((index, repo), map (ShowSub index) fx)
         (repos, fxList) = List.indexedMap makeEntry repoInfoList |> List.unzip

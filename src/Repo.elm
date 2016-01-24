@@ -1,10 +1,12 @@
 module Repo where
 
-import Effects exposing (Effects, Never)
+import Effects exposing (Effects, Never, batch)
 import Html exposing (..)
 import Html.Attributes exposing (class, href, property, style)
 import Http
-import Json.Encode
+import Json.Encode as JE
+import Json.Decode as JD exposing ((:=))
+import String
 import Task
 
 import GithubKey exposing (githubKey)
@@ -12,35 +14,60 @@ import GithubKey exposing (githubKey)
 
 -- Model.
 
+
+type alias RepoLang =
+  { lang: String
+  , byteNum: Float
+  }
+
+
 type alias Model =
-  { name: String  -- Property.
-  , username : String  -- Property.
+  { username : String  -- Property.
+  , repoName: String  -- Property.
   , url : String  -- Property.
   , description: String  -- Property.
   , readme: String  -- Fetched raw HTML.
+  , langs: List (String, Float)  -- Fetched language / percentage list.
   }
 
 
 init : String -> String -> String -> String -> (Model, Effects Action)
-init name username url description =
-  ( Model name username url description ""
-  , fetchReadme name)
+init username repoName url description =
+  ( Model username repoName url description "" []
+  , batch [ fetchReadme username repoName, fetchLang username repoName ]
+  )
 
 
 -- Update.
 
 type Action
-    = GetReadme (Maybe String)
+    = ShowReadme (Maybe String)
+    | ShowLang (Maybe (List RepoLang))
 
 
 update : Action -> Model -> (Model, Effects Action)
 update action model =
-  let
-    getReadme = Maybe.withDefault ""
-  in
-    case action of
-      GetReadme maybeReadme ->
-        ( { model | readme = getReadme maybeReadme }
+  case action of
+    ShowReadme maybeReadme ->
+      let
+        readme = Maybe.withDefault "" maybeReadme
+      in
+        ( { model | readme = readme }
+        , Effects.none
+        )
+    ShowLang maybeLangList ->
+      let
+        langList = Maybe.withDefault [] maybeLangList
+        byteSum = List.sum <| List.map .byteNum langList
+        getFraction : Float -> Float
+        getFraction i =
+          (i / byteSum * 1000) |> round |> toFloat |> \x -> x / 10
+        langs =
+          List.map (\rl -> (rl.lang, getFraction rl.byteNum)) langList
+            |> List.sortBy snd
+            |> List.reverse
+      in
+        ( { model | langs = langs }
         , Effects.none
         )
 
@@ -54,17 +81,22 @@ view : Signal.Address Action -> Model -> Html
 view address model =
   div [ projectStyle ]
     [ div [ descriptionStyle ]
-        [ h1 [ titleStyle ]
+        [ div []
+          [ h1 [ titleStyle ]
             [ a [ href model.url
                 , titleLinkStyle
                 -- A hack to inject styles of pseudo class ':hover'.
                 , class "repo-title" ]
-                [ text model.name ] ]
-        , p [ style [ "color" => "#EDECEC" ] ] [text model.description ]
+                [ text model.repoName ]
+            ]
+          , p [ style [ "color" => "#EDECEC" ] ] [text model.description ]
+          ]
+        , div []
+            [ ul [ langListStyle ] (List.map langView model.langs) ]
         ]
     , div
         [ readmeStyle
-        , property "innerHTML" <| Json.Encode.string model.readme
+        , property "innerHTML" <| JE.string model.readme
         ] []
     ]
 
@@ -82,14 +114,18 @@ projectStyle =
 descriptionStyle : Attribute
 descriptionStyle =
   style
-    [ "flex" => "1" ]
+    [ "flex" => "1"
+    , "display" => "flex"
+    , "flex-direction" => "column"
+    , "justify-content" => "space-between"
+    , "color" => "whitesmoke"
+    ]
 
 
 titleStyle : Attribute
 titleStyle =
   style
-    [ "color" => "whitesmoke"
-    , "white-space" => "nowrap"
+    [ "white-space" => "nowrap"
     , "text-overflow" => "ellipsis"
     , "overflow" => "hidden"
     , "font-family" => "Raleway,\"Roboto\",\"Helvetica Neue\",Helvetica,Arial,sans-serif"
@@ -106,6 +142,31 @@ titleLinkStyle =
     ]
 
 
+langListStyle : Attribute
+langListStyle =
+  style
+    [ "list-style" => "none"
+    , "padding" => "0"
+    , "font-size" => "12px"
+    , "font-weight" => "bold"
+    ]
+
+
+langView : (String, Float) -> Html
+langView (lang, fraction) =
+  li [ style
+        [ "display" => "inline-block"
+        , "line-height" => "20px"
+        , "padding" => "4px 18px"
+        , "padding-left" => "0"
+        ]
+      ] [ text lang
+        , span [ style [ "color" => "grey"
+                       , "padding-left" => "9px"
+                       ] ]
+            [ text <| (toString fraction ++ "%") ] ]
+
+
 readmeStyle : Attribute
 readmeStyle =
   style
@@ -118,19 +179,19 @@ readmeStyle =
 
 -- Effects.
 
-fetchReadme : String -> Effects Action
-fetchReadme name =
+fetchReadme : String -> String -> Effects Action
+fetchReadme username repoName =
   Http.send Http.defaultSettings
     { verb = "GET"
     , headers = [ ("Accept", "application/vnd.github.v3.html")
                 , ("Authorization", "token " ++ githubKey)
                 ]
-    , url = readmeUrl name
+    , url = resourceUrl "readme" username repoName
     , body = Http.empty
     }
     |> Task.map handleReadmeResponse
     |> Task.toMaybe
-    |> Task.map GetReadme
+    |> Task.map ShowReadme
     |> Effects.task
 
 
@@ -144,6 +205,29 @@ handleReadmeResponse response =
     "<p>Failed to fetch README</p>"
 
 
-readmeUrl : String -> String
-readmeUrl name =
-  "https://api.github.com/repos/edfward/" ++ name ++ "/readme"
+fetchLang : String -> String -> Effects Action
+fetchLang username repoName =
+  let
+    url = langUrl <| resourceUrl "languages" username repoName
+  in
+    Http.get decodeLang url
+      |> Task.toMaybe
+      |> Task.map ShowLang
+      |> Effects.task
+
+
+resourceUrl : String -> String -> String -> String
+resourceUrl resource username repoName =
+  String.join "/"
+    ["https://api.github.com/repos", username, repoName, resource]
+
+
+langUrl : String -> String
+langUrl url =
+  Http.url url [ ("access_token", githubKey) ]
+
+
+decodeLang : JD.Decoder (List RepoLang)
+decodeLang =
+  JD.keyValuePairs JD.float
+    |> JD.map (List.map (\(s, i) -> RepoLang s i))
