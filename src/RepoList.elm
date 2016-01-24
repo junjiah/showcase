@@ -8,7 +8,7 @@ import Http
 import Json.Decode as Json exposing ((:=))
 import Task
 
-import GithubKey exposing (githubKey)
+import Config exposing (githubKey, username)
 import Repo
 
 
@@ -22,10 +22,6 @@ type alias Model =
   { repoList : List (Int, Repo.Model)
   , user : String
   }
-
-
-username : String
-username = "edfward"
 
 
 init : (Model, Effects Action)
@@ -119,10 +115,10 @@ siteTitle =
              , "font-weight" => "300"
              ] ]
     -- Hardcoded URL.
-    [ a [ href "http://showcase.edfward.com"
+    [ a [ href (if username == "edfward" then "http://showcase.edfward.com" else "#")
         , style [ "color" => "grey", "text-decoration" => "none" ]
         ]
-      [ text "edfward"
+      [ text username
       , span [ style [ "color" => "#DDD" ] ] [ text "'s showcase" ]
       ]
     ]
@@ -161,7 +157,7 @@ fetchRepoList =
 
 repoListUrl : String
 repoListUrl =
-  Http.url "https://api.github.com/users/edfward/repos"
+  Http.url ("https://api.github.com/users/" ++ username ++ "/repos")
     [ ("sort", "pushed")
     , ("access_token", githubKey)
     ]

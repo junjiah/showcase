@@ -4,3 +4,5 @@ elm.js
 
 elm-stuff/
 dist/
+
+src/Config.elm

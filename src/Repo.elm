@@ -9,7 +9,7 @@ import Json.Decode as JD exposing ((:=))
 import String
 import Task
 
-import GithubKey exposing (githubKey)
+import Config exposing (githubKey)
 
 
 -- Model.

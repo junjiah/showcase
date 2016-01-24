@@ -1,0 +1,11 @@
+module Config (githubKey, username, preferredRepos) where
+
+
+githubKey : String
+githubKey = ___ACCESS_TOKEN___
+
+username : String
+username = ___USERNAME___
+
+preferredRepos : List String
+preferredRepos = ___REPOS___

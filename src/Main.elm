@@ -3,6 +3,8 @@ import RepoList exposing (init, update, view)
 import StartApp
 import Task
 
+import Config exposing (username)
+
 
 app =
   StartApp.start
@@ -21,4 +23,4 @@ port tasks =
   app.tasks
 
 port title : String
-port title = "edfward's showcase"
+port title = username ++ "'s showcase"

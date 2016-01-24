@@ -1,8 +1,6 @@
 #!/bin/bash
 
-GITHUB_KEY=$(cat github.key)
-
-sed -i .bak "s/###ACCESS_TOKEN###/${GITHUB_KEY}/" src/GithubKey.elm
+bash _config.sh
 
 printf "\relm-reactor running, hit Ctrl-c to quit\n"
 
@@ -11,7 +9,7 @@ REACTOR_PID=$!
 
 function cleanup() {
     kill $REACTOR_PID
-    sed -i .bak "s/${GITHUB_KEY}/###ACCESS_TOKEN###/" src/GithubKey.elm
+    # TODO: May have other works.
     exit
 }
 
