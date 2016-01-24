@@ -2,7 +2,7 @@ module Repo where
 
 import Effects exposing (Effects, Never)
 import Html exposing (..)
-import Html.Attributes exposing (style, property)
+import Html.Attributes exposing (class, href, property, style)
 import Http
 import Json.Encode
 import Task
@@ -11,15 +11,17 @@ import Task
 -- Model.
 
 type alias Model =
-  { name: String -- Property.
-  , description: String
-  , readme: String
+  { name: String  -- Property.
+  , username : String  -- Property.
+  , url : String  -- Property.
+  , description: String  -- Property.
+  , readme: String  -- Fetched raw HTML.
   }
 
 
-init : String -> String -> (Model, Effects Action)
-init name description =
-  ( Model name description ""
+init : String -> String -> String -> String -> (Model, Effects Action)
+init name username url description =
+  ( Model name username url description ""
   , fetchReadme name)
 
 
@@ -50,8 +52,12 @@ view : Signal.Address Action -> Model -> Html
 view address model =
   div [ projectStyle ]
     [ div [ descriptionStyle ]
-        [ h3 [] [ text model.name ]
-        , p [] [text model.description ]
+        [ h1 []
+            [ a [ href model.url
+                , titleStyle
+                , class "repotitle" ]
+                [ text model.name ] ]
+        , p [ style [ "color" => "#EDECEC" ] ] [text model.description ]
         ]
     , div
         [ readmeStyle
@@ -75,12 +81,21 @@ descriptionStyle =
     [ "flex" => "1" ]
 
 
+titleStyle : Attribute
+titleStyle =
+  style
+    [ "color" => "#F19A2C"
+    , "transition" => "color 200ms ease-in-out"
+    ]
+
+
 readmeStyle : Attribute
 readmeStyle =
   style
     [ "flex" => "1"
-    , "max-height" => "200px"
+    , "max-height" => "320px"
     , "overflow" => "scroll"
+    , "color" => "#EDECEC"
     ]
 
 
@@ -105,9 +120,9 @@ handleReadmeResponse response =
   if 200 <= response.status && response.status < 300 then
     case response.value of
       Http.Text readmeText -> readmeText
-      _ -> "No README Found"
+      _ -> "<p>No README Found</p>"
   else
-    "No README Found"
+    "<p>No README Found</p>"
 
 
 readmeUrl : String -> String

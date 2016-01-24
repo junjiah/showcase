@@ -11,6 +11,7 @@ REACTOR_PID=$!
 
 function cleanup() {
     kill $REACTOR_PID
+    sed -i .bak "s/${GITHUB_KEY}/###ACCESS_TOKEN###/" src/RepoList.elm
     exit
 }
 

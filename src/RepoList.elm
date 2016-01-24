@@ -40,6 +40,7 @@ type Action
   = InitRepoList (Maybe (List RepoInfo))
   | ShowSub Int Repo.Action
 
+
 update : Action -> Model -> (Model, Effects Action)
 update message model =
   case message of
@@ -48,7 +49,7 @@ update message model =
         repoInfoList = Maybe.withDefault [] maybeRepoInfoList
         makeEntry index info =
           let
-            (repo, fx) = Repo.init info.name info.description
+            (repo, fx) = Repo.init info.name username info.url info.description
           in
             ((index, repo), map (ShowSub index) fx)
         (repos, fxList) = List.indexedMap makeEntry repoInfoList |> List.unzip
@@ -86,10 +87,13 @@ update message model =
 
 view : Signal.Address Action -> Model -> Html
 view address model =
-  div [ style [ "min-height" => "100vh", "display" => "flex" ] ]
-    [ nav [ style [ "flex" => "0 0 12em" ] ] []
+  div [ backgroundStyle ]
+    [ css "style.css"
+    , nav [ style [ "flex" => "0 0 12em" ] ] []
     , main' [ style [ "flex" => "1" ] ]
-        (List.map (elementView address) model.repoList)
+        ( List.intersperse separater
+            <| List.map (elementView address) model.repoList
+        )
     , aside [ style [ "flex" => "0 0 12em" ] ] []
     ]
 
@@ -99,13 +103,38 @@ elementView address (id, model) =
   Repo.view (Signal.forwardTo address (ShowSub id)) model
 
 
+css : String -> Html
+css path =
+  node "link" [ rel "stylesheet", href path ] []
+
+
+separater : Html
+separater =
+  div [ style [ "margin" => "0 auto"
+              , "height" => "9px"
+              , "width" => "576px"
+              , "background" => "url(\"separator.png\")"
+              , "-webkit-filter" => "invert(100%)"
+              , "filter" => "invert(100%)"
+              ]
+  ] []
+
+
+backgroundStyle : Attribute
+backgroundStyle =
+  style
+    [ "min-height" => "100vh"
+    , "display" => "flex"
+    , "background" => "#252525"
+    ]
+
 -- Effects.
 
 
 fetchRepoList : Effects Action
 fetchRepoList =
   Http.get decodeUrl repoListUrl
-    |> Task.map (List.take 3)
+    |> Task.map (List.take 10)
     |> Task.toMaybe
     |> Task.map InitRepoList
     |> Effects.task
