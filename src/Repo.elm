@@ -88,18 +88,19 @@ descriptionStyle =
 titleStyle : Attribute
 titleStyle =
   style
-    [ "color" => "#F19A2C"
+    [ "color" => "whitesmoke"
     , "white-space" => "nowrap"
     , "text-overflow" => "ellipsis"
     , "overflow" => "hidden"
-    , "font-weight" => "300"
+    , "font-family" => "Raleway,\"Roboto\",\"Helvetica Neue\",Helvetica,Arial,sans-serif"
+    , "font-weight" => "100"
     ]
 
 
 titleLinkStyle : Attribute
 titleLinkStyle =
   style
-    [ "color" => "#F19A2C"
+    [ "color" => "whitesmoke"
     , "transition" => "color 200ms ease-in-out"
     , "text-decoration" => "none"
     ]

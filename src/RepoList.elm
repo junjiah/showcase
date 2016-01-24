@@ -85,14 +85,16 @@ update message model =
 
 (=>) = (,)
 
-
+-- Also as an entry point to the HTML.
 view : Signal.Address Action -> Model -> Html
 view address model =
   div [ backgroundStyle ]
     [ css "style.css"
-    , css "https://fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic"
+    , css "https://fonts.googleapis.com/css?family=Roboto:100,300,300italic,700,700italic"
+    , css "https://fonts.googleapis.com/css?family=Raleway:100"
+    , css "https://fonts.googleapis.com/css?family=Source+Sans+Pro:300"
     , nav [ style [ "flex" => "0 0 12em" ] ] []
-    , main' [ style [ "flex" => "1", "min-width" => "700px" ] ]
+    , main' [ style [ "flex" => "1" ] ]
         ( siteTitle :: (List.intersperse separater
                         <| List.map (elementView address) model.repoList)
         )
@@ -112,8 +114,9 @@ css path =
 
 siteTitle : Html
 siteTitle =
-  h1 [ style [ "font-weight" => "300"
-             , "margin-top" => "100px"
+  h1 [ style [ "margin-top" => "100px"
+             , "font-family" => "\"Source Sans Pro\", \"Helvetica Neue\", Helvetica, Arial, sans-serif"
+             , "font-weight" => "300"
              ] ]
     -- Hardcoded URL.
     [ a [ href "http://showcase.edfward.com"

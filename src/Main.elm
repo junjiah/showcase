@@ -19,3 +19,6 @@ main = app.html
 port tasks : Signal (Task.Task Never ())
 port tasks =
   app.tasks
+
+port title : String
+port title = "edfward's showcase"
