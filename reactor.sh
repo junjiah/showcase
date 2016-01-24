@@ -1,6 +1,7 @@
 #!/bin/bash
 
 bash _config.sh
+rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
 
 printf "\relm-reactor running, hit Ctrl-c to quit\n"
 

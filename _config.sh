@@ -8,7 +8,7 @@ then
   GITHUB_KEY=$(head -1 github.key)
 else
   echo "Github API key, not found."
-  exit
+  exit 1
 fi
 echo "Github key: $GITHUB_KEY"
 
