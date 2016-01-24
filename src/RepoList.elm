@@ -8,7 +8,7 @@ import Http
 import Json.Decode as Json exposing ((:=))
 import Task
 
-import Config exposing (githubKey, username)
+import Config exposing (githubKey, username, preferredRepos)
 import Repo
 
 
@@ -35,7 +35,7 @@ init =
 
 type Action
   = InitRepoList (Maybe (List RepoInfo))
-  | ShowSub Int Repo.Action
+  | UpdateRepo Int Repo.Action
 
 
 update : Action -> Model -> (Model, Effects Action)
@@ -48,13 +48,14 @@ update message model =
           let
             (repo, fx) = Repo.init username info.name info.url info.description
           in
-            ((index, repo), map (ShowSub index) fx)
+            ((index, repo), map (UpdateRepo index) fx)
         (repos, fxList) = List.indexedMap makeEntry repoInfoList |> List.unzip
       in
         ( Model repos username
         , batch fxList
         )
-    ShowSub id repoAction ->
+
+    UpdateRepo id repoAction ->
       let
         subUpdate ((repoId, repoModel) as entry) =
           if repoId == id then
@@ -62,7 +63,7 @@ update message model =
               (newRepo, fx) = Repo.update repoAction repoModel
             in
               ( (repoId, newRepo)
-              , map (ShowSub repoId) fx
+              , map (UpdateRepo repoId) fx
               )
           else
             (entry, Effects.none)
@@ -100,7 +101,7 @@ view address model =
 
 elementView : Signal.Address Action -> (Int, Repo.Model) -> Html
 elementView address (id, model) =
-  Repo.view (Signal.forwardTo address (ShowSub id)) model
+  Repo.view (Signal.forwardTo address (UpdateRepo id)) model
 
 
 css : String -> Html
@@ -148,11 +149,21 @@ backgroundStyle =
 
 fetchRepoList : Effects Action
 fetchRepoList =
-  Http.get decodeUrl repoListUrl
-    |> Task.map (List.take 10)
-    |> Task.toMaybe
-    |> Task.map InitRepoList
-    |> Effects.task
+  let
+    filter : List RepoInfo -> List RepoInfo
+    filter
+      = if
+          List.isEmpty preferredRepos
+        then
+          List.take 10
+        else
+          List.filter (\r -> List.member r.name preferredRepos)
+  in
+    Http.get decodeUrl repoListUrl
+      |> Task.map filter
+      |> Task.toMaybe
+      |> Task.map InitRepoList
+      |> Effects.task
 
 
 repoListUrl : String

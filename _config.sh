@@ -22,7 +22,7 @@ echo "Username: $USERNAME"
 REPOS='[]'
 if [ -f 'repos.key' ]
 then
-  REPOS=$(cat repos.key)
+  REPOS=$(tr -d '\n' < repos.key)
 fi
 echo "Preferred repos: $REPOS"
 
