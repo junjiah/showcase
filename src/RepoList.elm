@@ -89,7 +89,7 @@ update message model =
 view : Signal.Address Action -> Model -> Html
 view address model =
   div [ backgroundStyle ]
-    [ css "style.css"
+    [ css "/style.css"
     , css "https://fonts.googleapis.com/css?family=Roboto:100,300,300italic,700,700italic"
     , css "https://fonts.googleapis.com/css?family=Raleway:100"
     , css "https://fonts.googleapis.com/css?family=Source+Sans+Pro:300"
@@ -132,7 +132,7 @@ separater =
   div [ style [ "margin" => "0 auto"
               , "height" => "9px"
               , "width" => "576px"
-              , "background" => "url(\"separator.png\")"
+              , "background" => "url(\"/assets/separator.png\")"
               , "-webkit-filter" => "invert(100%)"
               , "filter" => "invert(100%)"
               ]

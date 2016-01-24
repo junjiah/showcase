@@ -2,9 +2,5 @@
 *.bak
 elm.js
 
-# Neglect stuff from elm-make, or copied for reference.
-index.html
-style.css
-separator.png
-
 elm-stuff/
+dist/
