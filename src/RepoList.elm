@@ -8,6 +8,7 @@ import Http
 import Json.Decode as Json exposing ((:=))
 import Task
 
+import GithubKey exposing (githubKey)
 import Repo
 
 
@@ -89,10 +90,11 @@ view : Signal.Address Action -> Model -> Html
 view address model =
   div [ backgroundStyle ]
     [ css "style.css"
+    , css "https://fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic"
     , nav [ style [ "flex" => "0 0 12em" ] ] []
-    , main' [ style [ "flex" => "1" ] ]
-        ( List.intersperse separater
-            <| List.map (elementView address) model.repoList
+    , main' [ style [ "flex" => "1", "min-width" => "700px" ] ]
+        ( siteTitle :: (List.intersperse separater
+                        <| List.map (elementView address) model.repoList)
         )
     , aside [ style [ "flex" => "0 0 12em" ] ] []
     ]
@@ -107,6 +109,20 @@ css : String -> Html
 css path =
   node "link" [ rel "stylesheet", href path ] []
 
+
+siteTitle : Html
+siteTitle =
+  h1 [ style [ "font-weight" => "300"
+             , "margin-top" => "100px"
+             ] ]
+    -- Hardcoded URL.
+    [ a [ href "http://showcase.edfward.com"
+        , style [ "color" => "grey", "text-decoration" => "none" ]
+        ]
+      [ text "edfward"
+      , span [ style [ "color" => "#DDD" ] ] [ text "'s showcase" ]
+      ]
+    ]
 
 separater : Html
 separater =
@@ -128,8 +144,8 @@ backgroundStyle =
     , "background" => "#252525"
     ]
 
--- Effects.
 
+-- Effects.
 
 fetchRepoList : Effects Action
 fetchRepoList =
@@ -144,7 +160,7 @@ repoListUrl : String
 repoListUrl =
   Http.url "https://api.github.com/users/edfward/repos"
     [ ("sort", "pushed")
-    , ("access_token", "###ACCESS_TOKEN###")
+    , ("access_token", githubKey)
     ]
 
 

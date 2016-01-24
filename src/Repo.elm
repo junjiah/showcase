@@ -7,6 +7,8 @@ import Http
 import Json.Encode
 import Task
 
+import GithubKey exposing (githubKey)
+
 
 -- Model.
 
@@ -52,10 +54,11 @@ view : Signal.Address Action -> Model -> Html
 view address model =
   div [ projectStyle ]
     [ div [ descriptionStyle ]
-        [ h1 []
+        [ h1 [ titleStyle ]
             [ a [ href model.url
-                , titleStyle
-                , class "repotitle" ]
+                , titleLinkStyle
+                -- A hack to inject styles of pseudo class ':hover'.
+                , class "repo-title" ]
                 [ text model.name ] ]
         , p [ style [ "color" => "#EDECEC" ] ] [text model.description ]
         ]
@@ -72,6 +75,7 @@ projectStyle =
     [ "display" => "flex"
     , "padding-top" => "125px"
     , "padding-bottom" => "130px"
+    , "font-family" => "\"Roboto\",\"Helvetica Neue\",Helvetica,Arial,sans-serif"
     ]
 
 
@@ -85,7 +89,19 @@ titleStyle : Attribute
 titleStyle =
   style
     [ "color" => "#F19A2C"
+    , "white-space" => "nowrap"
+    , "text-overflow" => "ellipsis"
+    , "overflow" => "hidden"
+    , "font-weight" => "300"
+    ]
+
+
+titleLinkStyle : Attribute
+titleLinkStyle =
+  style
+    [ "color" => "#F19A2C"
     , "transition" => "color 200ms ease-in-out"
+    , "text-decoration" => "none"
     ]
 
 
@@ -105,7 +121,9 @@ fetchReadme : String -> Effects Action
 fetchReadme name =
   Http.send Http.defaultSettings
     { verb = "GET"
-    , headers = [("Accept", "application/vnd.github.v3.html")]
+    , headers = [ ("Accept", "application/vnd.github.v3.html")
+                , ("Authorization", "token " ++ githubKey)
+                ]
     , url = readmeUrl name
     , body = Http.empty
     }
@@ -120,9 +138,9 @@ handleReadmeResponse response =
   if 200 <= response.status && response.status < 300 then
     case response.value of
       Http.Text readmeText -> readmeText
-      _ -> "<p>No README Found</p>"
+      _ -> "<p>Failed to fetch README</p>"
   else
-    "<p>No README Found</p>"
+    "<p>Failed to fetch README</p>"
 
 
 readmeUrl : String -> String

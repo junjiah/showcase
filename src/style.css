@@ -2,10 +2,6 @@ h1, h2, h3, h4, h5, h6 {
   color:  #fff;
 }
 
-h1 {
-  font-family: Raleway,"Helvetica Neue",Helvetica,Roboto,Arial,sans-serif
-}
-
 article a {
   color: #8F8F8F !important;
   transition: color 200ms ease-in-out;
@@ -16,8 +12,6 @@ article a:hover {
 }
 
 /* Hack: inject styles on repo titles. */
-a.repotitle:hover {
-  /*color: darkgrey !important;*/
+a.repo-title:hover {
   color: #227EC0 !important;
-  text-decoration: none;
 }
