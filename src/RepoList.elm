@@ -82,6 +82,7 @@ update message model =
 
 (=>) = (,)
 
+
 -- Also as an entry point to the HTML.
 view : Signal.Address Action -> Model -> Html
 view address model =
@@ -115,8 +116,7 @@ siteTitle =
              , "font-family" => "\"Source Sans Pro\", \"Helvetica Neue\", Helvetica, Arial, sans-serif"
              , "font-weight" => "300"
              ] ]
-    -- Hardcoded URL.
-    [ a [ href (if username == "edfward" then "http://showcase.edfward.com" else "#")
+    [ a [ href "/"
         , style [ "color" => "grey", "text-decoration" => "none" ]
         ]
       [ text username

@@ -14,7 +14,6 @@ import Config exposing (githubKey)
 
 -- Model.
 
-
 type alias RepoLang =
   { lang: String
   , byteNum: Float
@@ -208,7 +207,8 @@ handleReadmeResponse response =
 fetchLang : String -> String -> Effects Action
 fetchLang username repoName =
   let
-    url = langUrl <| resourceUrl "languages" username repoName
+    url = Http.url (resourceUrl "languages" username repoName)
+            [ ("access_token", githubKey) ]
   in
     Http.get decodeLang url
       |> Task.toMaybe
@@ -222,12 +222,7 @@ resourceUrl resource username repoName =
     ["https://api.github.com/repos", username, repoName, resource]
 
 
-langUrl : String -> String
-langUrl url =
-  Http.url url [ ("access_token", githubKey) ]
-
-
 decodeLang : JD.Decoder (List RepoLang)
 decodeLang =
   JD.keyValuePairs JD.float
-    |> JD.map (List.map (\(s, i) -> RepoLang s i))
+    |> JD.map (List.map <| uncurry RepoLang)
