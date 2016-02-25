@@ -15,3 +15,8 @@ article a:hover {
 a.repo-title:hover {
   color: #227EC0 !important;
 }
+
+/* Hide scrollbar. */
+::-webkit-scrollbar {
+  display: none;
+}
