@@ -205,7 +205,7 @@ decodeUrl =
             Json.object4 RepoInfo
                 ("name" := Json.string)
                 ("html_url" := Json.string)
-                ("description" := Json.string)
+                (Json.oneOf [ "description" := Json.string, Json.succeed "" ])
                 ("stargazers_count" := Json.int)
     in
         Json.list repo
