@@ -6,3 +6,5 @@ elm-stuff/
 dist/
 
 src/Config.elm
+
+*.swp
